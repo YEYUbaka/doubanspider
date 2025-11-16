@@ -361,7 +361,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## 👤 作者
 
-**计算机专业大学生**
+**卑微计算机专业大学生**
 
 - GitHub: [@YEYUbaka](https://github.com/YEYUbaka)
 
@@ -374,3 +374,4 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Made with ❤️ by a Python learner
 
 </div>
+
