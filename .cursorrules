@@ -1,0 +1,218 @@
+# 豆瓣电影爬虫项目规则
+
+## 项目概述
+本项目是一个豆瓣电影信息爬虫系统，用于爬取武汉地区豆瓣电影信息，进行数据分析和可视化。
+
+## 开发背景
+本项目由刚学完Python的计算机专业大学生开发，是一个综合性的爬虫实践项目。项目旨在：
+- 巩固Python基础语法和面向对象编程
+- 学习网络爬虫技术（requests、BeautifulSoup）
+- 掌握数据处理和分析（pandas）
+- 实践数据可视化（matplotlib）
+- 学习中文文本处理（jieba、wordcloud）
+- 培养项目开发能力和代码规范意识
+
+## 技术栈要求
+- Python 版本：3.9
+- Python 解释器路径：`D:\Program Files\python3.9\python.exe`
+  - 所有 Python 脚本和命令应使用此解释器路径执行
+  - 在终端命令中使用完整路径，例如：`"D:\Program Files\python3.9\python.exe" script.py`
+- 主要依赖库：
+  - requests：用于HTTP请求
+  - BeautifulSoup4：用于HTML解析
+  - pandas：用于数据处理和存储
+  - matplotlib：用于数据可视化
+  - jieba：用于中文分词
+  - wordcloud：用于生成词云图
+  - lxml：用于HTML解析器
+
+## 功能需求
+
+### 1. 数据爬取模块
+- **目标网站**：豆瓣电影 - 武汉地区正在热映/即将上映页面
+- **爬取字段**：
+  - 电影名称（movie_name）
+  - 电影链接地址（movie_url）
+  - 上映时间（release_date）
+  - 国家/地区（country）
+  - 想看人数（wish_count）
+  - 电影评论（comments）
+- **存储格式**：CSV文件（movies.csv）或JSON文件（movies.json）
+- **注意事项**：
+  - 必须设置合理的请求头（User-Agent），模拟浏览器访问
+  - 添加请求延迟，避免频繁请求导致IP被封
+  - 实现异常处理和重试机制
+  - 遵守robots.txt协议
+
+### 2. 数据排序与可视化模块
+- **排序规则**：根据"想看人数"（wish_count）降序排列
+- **可视化要求**：
+  - 显示想看人数Top 5的电影
+  - 使用柱状图（bar chart）展示
+  - 图表需包含：标题、X轴标签（电影名称）、Y轴标签（想看人数）
+  - 电影名称过长时需旋转显示或截断
+  - 保存图片为PNG格式（top5_movies.png）
+
+### 3. 评论分析与词云生成模块
+- **评论爬取**：
+  - 从每部电影的详情页或评论页面爬取评论
+  - 至少爬取每部电影的前20-50条评论
+  - 处理分页逻辑
+- **文本处理**：
+  - 使用jieba进行中文分词
+  - 去除停用词（可创建stopwords.txt文件）
+  - 统计高频词汇（top 20）和低频词汇（出现1次的词汇）
+  - 输出统计结果到文件（word_statistics.txt）
+- **词云生成**：
+  - 使用wordcloud库生成词云图
+  - 使用中文字体（如：simhei.ttf、simsun.ttc等）
+  - 词云图尺寸：宽度800px，高度400px
+  - 保存为PNG格式（wordcloud.png）
+  - 词云颜色方案要美观，背景为白色
+
+## 代码规范
+
+### 文件结构
+```
+豆瓣/
+├── .cursorrules          # 项目规则文件
+├── requirements.txt      # 依赖包列表
+├── README.md            # 项目说明文档
+├── main.py              # 主程序入口
+├── spider.py            # 爬虫模块
+├── data_processor.py    # 数据处理模块
+├── visualizer.py        # 可视化模块
+├── wordcloud_generator.py # 词云生成模块
+├── utils.py             # 工具函数
+├── config.py            # 配置文件
+├── venv/                # 虚拟环境目录（创建后生成）
+├── data/                # 数据存储目录
+│   ├── movies.csv
+│   ├── movies.json
+│   └── word_statistics.txt
+├── images/              # 图片输出目录
+│   ├── top5_movies.png
+│   └── wordcloud.png
+└── fonts/               # 字体文件目录（可选）
+    └── simhei.ttf
+```
+
+### 编码规范
+- 使用UTF-8编码
+- 遵循PEP 8代码风格
+- 函数和类需添加docstring文档字符串
+- 变量命名使用有意义的英文名称
+- 关键代码需添加注释说明
+
+### 错误处理
+- 所有网络请求必须包含异常处理（try-except）
+- 文件操作需检查文件是否存在
+- 数据解析失败时记录错误日志
+- 使用logging模块记录程序运行日志
+
+### 性能优化
+- 使用Session复用连接
+- 合理设置请求间隔（建议1-2秒）
+- 使用多线程或异步请求时需控制并发数
+- 大数据量时考虑分批处理
+
+## 实现要求
+
+### 环境配置
+
+#### Python 解释器
+- **Python 版本**：3.9
+- **解释器路径**：`D:\Program Files\python3.9\python.exe`
+- 所有 Python 脚本和命令应使用此解释器路径执行
+
+#### 虚拟环境（推荐使用）
+虚拟环境可以隔离项目依赖，避免与系统Python环境冲突，**强烈推荐使用**。
+
+**创建虚拟环境：**
+```bash
+"D:\Program Files\python3.9\python.exe" -m venv venv
+```
+
+**激活虚拟环境：**
+- Windows PowerShell:
+  ```powershell
+  .\venv\Scripts\Activate.ps1
+  ```
+- Windows CMD:
+  ```cmd
+  venv\Scripts\activate.bat
+  ```
+
+**在虚拟环境中安装依赖：**
+```bash
+# 激活虚拟环境后
+pip install -r requirements.txt
+```
+
+**在虚拟环境中运行程序：**
+```bash
+# 激活虚拟环境后
+python main.py
+```
+
+**退出虚拟环境：**
+```bash
+deactivate
+```
+
+#### 不使用虚拟环境（不推荐）
+如果选择不使用虚拟环境，可以直接在系统Python环境中安装依赖：
+- **安装依赖**：`"D:\Program Files\python3.9\python.exe" -m pip install -r requirements.txt`
+- **运行脚本**：`"D:\Program Files\python3.9\python.exe" main.py`
+
+### 主程序流程
+1. 初始化配置（城市、请求头、延迟时间等）
+2. 爬取电影基本信息列表
+3. 遍历电影列表，爬取每部电影的详细评论
+4. 保存原始数据到本地文件
+5. 处理数据，按想看人数排序
+6. 生成Top 5电影可视化图表
+7. 分析评论，统计词频
+8. 生成词云图
+9. 输出统计报告
+
+### 数据存储
+- CSV文件格式：使用pandas的to_csv方法，编码为UTF-8
+- JSON文件格式：使用json模块，ensure_ascii=False，indent=2
+- 数据文件保存在data/目录下
+
+### 输出要求
+- 所有输出文件使用相对路径
+- 图片文件保存在images/目录下
+- 统计报告保存为文本文件
+- 控制台输出进度信息和关键统计结果
+
+## 注意事项
+1. **反爬虫应对**：
+   - 设置合理的User-Agent
+   - 添加请求延迟
+   - 必要时使用代理或Cookie
+   - 处理验证码（如遇到）
+
+2. **数据质量**：
+   - 清洗无效数据
+   - 处理缺失值
+   - 验证数据格式
+
+3. **法律合规**：
+   - 仅用于学习研究目的
+   - 遵守网站服务条款
+   - 不进行商业用途
+
+4. **可维护性**：
+   - 配置与代码分离
+   - 模块化设计
+   - 易于扩展和修改
+
+## 测试要求
+- 每个模块应有独立的测试函数
+- 测试数据爬取功能
+- 测试数据处理和排序功能
+- 测试可视化输出
+- 测试词云生成功能
+

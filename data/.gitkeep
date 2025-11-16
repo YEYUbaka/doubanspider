@@ -1,0 +1,3 @@
+# 此文件用于保留 data 目录结构
+# 实际数据文件（.csv, .json, .txt）会被 .gitignore 忽略
+
