@@ -11,17 +11,54 @@ from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 from utils import safe_request, clean_text, extract_number, get_movie_id_from_url
 import config
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 class DoubanMovieSpider:
     """豆瓣电影爬虫类"""
-    
+
     def __init__(self):
         """初始化爬虫"""
         self.session = requests.Session()
         self.session.headers.update(config.HEADERS)
         self.movies = []
-        
+        self.driver = None
+        self._init_selenium()
+
+    def _init_selenium(self):
+        """初始化Selenium WebDriver"""
+        try:
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')  # 无头模式
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_argument(f'user-agent={config.HEADERS["User-Agent"]}')
+
+            # 使用webdriver-manager自动管理ChromeDriver
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            logging.info("Selenium WebDriver 初始化成功")
+        except Exception as e:
+            logging.warning(f"Selenium初始化失败: {str(e)}, 评论爬取功能将不可用")
+            self.driver = None
+
+    def __del__(self):
+        """析构函数,关闭浏览器"""
+        if self.driver:
+            try:
+                self.driver.quit()
+                logging.info("Selenium WebDriver 已关闭")
+            except:
+                pass
+
     def fetch_page(self, url: str) -> Optional[BeautifulSoup]:
         """
         获取网页内容并解析
@@ -252,63 +289,85 @@ class DoubanMovieSpider:
     
     def fetch_movie_comments(self, movie: Dict) -> List[str]:
         """
-        爬取电影评论
-        
+        爬取电影评论 (使用Selenium绕过反爬虫)
+
         Args:
             movie: 电影信息字典
-            
+
         Returns:
             评论列表
         """
         comments = []
         movie_id = get_movie_id_from_url(movie.get('movie_url', ''))
-        
+
         if not movie_id:
             logging.warning(f"无法获取电影ID: {movie.get('movie_name')}")
             return comments
-        
+
+        if not self.driver:
+            logging.warning(f"Selenium未初始化，无法爬取评论: {movie.get('movie_name')}")
+            return comments
+
         try:
             # 计算需要爬取的页数
             total_pages = (config.COMMENTS_PER_MOVIE + config.COMMENTS_PAGE_SIZE - 1) // config.COMMENTS_PAGE_SIZE
-            
+
             for page in range(total_pages):
                 start = page * config.COMMENTS_PAGE_SIZE
                 comments_url = f"https://movie.douban.com/subject/{movie_id}/comments?start={start}&limit={config.COMMENTS_PAGE_SIZE}&status=P&sort=new_score"
-                
-                soup = self.fetch_page(comments_url)
-                if not soup:
-                    break
-                
-                # 解析评论
+
+                logging.info(f"正在请求评论页: {comments_url}")
+
+                # 使用Selenium加载页面
+                self.driver.get(comments_url)
+
+                # 等待页面加载完成，等待评论元素出现
+                try:
+                    WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, "comment-item"))
+                    )
+                    # 额外等待一下确保内容完全加载
+                    time.sleep(2)
+                except Exception as e:
+                    logging.warning(f"等待评论加载超时: {str(e)}")
+                    # 即使超时也尝试解析
+
+                # 获取页面源码并解析
+                page_source = self.driver.page_source
+                soup = BeautifulSoup(page_source, 'lxml')
+
+                # 解析评论 - 查找评论内容
                 comment_items = soup.find_all('span', class_='short')
-                if not comment_items:
-                    # 尝试其他可能的类名
-                    comment_items = soup.find_all('div', class_='comment')
-                
+
                 page_comments = []
                 for item in comment_items:
                     comment_text = clean_text(item.get_text())
                     if comment_text and len(comment_text) > 5:  # 过滤太短的评论
                         page_comments.append(comment_text)
-                
+
                 comments.extend(page_comments)
                 logging.info(f"电影 {movie.get('movie_name')} 第 {page + 1} 页，获取 {len(page_comments)} 条评论")
-                
+
                 # 如果本页评论数少于预期，可能已到最后一页
                 if len(page_comments) < config.COMMENTS_PAGE_SIZE:
                     break
-                
+
                 # 如果已获取足够评论，停止
                 if len(comments) >= config.COMMENTS_PER_MOVIE:
                     break
-            
+
+                # 页面间延迟
+                time.sleep(config.REQUEST_DELAY)
+
             # 限制评论数量
             comments = comments[:config.COMMENTS_PER_MOVIE]
             logging.info(f"电影 {movie.get('movie_name')} 共获取 {len(comments)} 条评论")
-            
+
         except Exception as e:
             logging.error(f"爬取评论失败 {movie.get('movie_name')}: {str(e)}")
-        
+            import traceback
+            logging.error(traceback.format_exc())
+
         return comments
     
     def crawl_movies(self) -> List[Dict]:
