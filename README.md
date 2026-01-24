@@ -14,6 +14,54 @@
 
 ---
 
+## 🔔 更新日志
+
+### 2025-01-24 重大更新 - 修复评论爬取功能
+
+#### 🐛 问题描述
+在重新运行项目时发现，虽然热搜榜电影名称、链接、想看人数都能正常获取，但**评论爬取功能完全失效**，所有电影的评论数量都是0条。
+
+#### 🔍 问题原因
+经过调试分析发现，豆瓣网站对评论页面启用了**JavaScript反爬虫验证机制**：
+- 访问评论页面时返回一个JavaScript挑战页面
+- 需要执行SHA-512哈希计算（工作量证明 PoW）
+- 传统的requests库无法执行JavaScript，导致无法获取真实评论内容
+
+#### ✅ 解决方案
+采用 **Selenium + Chrome WebDriver** 技术方案，使用真实浏览器模拟访问：
+
+**技术实现：**
+1. 集成Selenium WebDriver（无头模式运行）
+2. 自动等待页面JavaScript执行完成
+3. 解析渲染后的HTML获取评论内容
+4. 保持合理的请求延迟避免被封
+
+**修改文件：**
+- `spider.py` - 添加Selenium支持，重写评论爬取逻辑
+- `requirements.txt` - 新增selenium和webdriver-manager依赖
+- `config.py` - 优化请求头和延迟配置
+
+#### 📊 修复效果
+- ❌ **修复前**: 所有电影评论数量 = 0条
+- ✅ **修复后**: 每部电影成功获取 19-30条评论
+- ✅ **测试结果**: 62部电影全部正常爬取评论
+
+#### 🚀 使用说明
+**首次使用需要重新安装依赖：**
+```bash
+pip install -r requirements.txt
+```
+
+程序会自动下载并配置ChromeDriver，无需手动安装。
+
+**注意事项：**
+- 首次运行会自动下载ChromeDriver（约10MB）
+- 需要系统已安装Chrome浏览器
+- 爬取速度会比之前稍慢（因为需要等待页面渲染）
+- 建议保持默认的5秒请求延迟，避免触发反爬虫
+
+---
+
 ## 📖 项目简介
 
 本项目是一个**豆瓣电影信息爬虫系统**，用于爬取指定城市（默认武汉）的豆瓣电影信息，并进行数据分析和可视化。项目采用模块化设计，代码规范清晰，适合Python学习者参考和实践。
@@ -42,6 +90,7 @@
 ### 1. 数据爬取模块
 - 爬取电影基本信息（名称、链接、上映时间、国家、想看人数）
 - 批量获取电影评论（可配置每部电影的评论数量）
+- **使用Selenium绕过反爬虫机制**（2025-01-24更新）
 - 智能处理分页逻辑
 - 异常处理和重试机制
 
@@ -67,6 +116,7 @@
 |------|------|
 | **编程语言** | Python 3.9 |
 | **网络请求** | requests |
+| **浏览器自动化** | Selenium, webdriver-manager |
 | **HTML解析** | BeautifulSoup4, lxml |
 | **数据处理** | pandas |
 | **数据可视化** | matplotlib |
@@ -101,6 +151,7 @@ douban-movie-spider/
 ### 环境要求
 
 - Python 3.9 或更高版本
+- Chrome 浏览器（用于Selenium自动化）
 - 网络连接（需要访问豆瓣网站）
 
 ### 安装步骤
@@ -297,8 +348,24 @@ wordcloud_config = {
 - ✅ 能否正常访问豆瓣网站
 - ✅ 如果遇到反爬虫限制，增加 `REQUEST_DELAY` 的值
 - ✅ 检查请求头设置是否正确
+- ✅ 确保Chrome浏览器已安装（Selenium需要）
 
-### Q2: 词云图中文显示乱码？
+### Q2: ChromeDriver下载失败？
+
+**A:** 程序会自动下载ChromeDriver，如果失败：
+- 检查网络连接
+- 使用代理或VPN
+- 手动下载ChromeDriver并配置路径
+- 确保Chrome浏览器版本与ChromeDriver匹配
+
+### Q3: 评论爬取数量为0？
+
+**A:** 这是反爬虫机制导致的，已在2025-01-24更新中修复：
+- 更新代码：`git pull origin main`
+- 重新安装依赖：`pip install -r requirements.txt`
+- 确保Chrome浏览器已安装
+
+### Q4: 词云图中文显示乱码？
 
 **A:** 确保系统安装了中文字体：
 - Windows: 通常自带 SimHei、SimSun 等字体
@@ -307,7 +374,7 @@ wordcloud_config = {
 
 程序会自动查找系统字体，如果找不到会显示警告。
 
-### Q3: 如何修改目标城市？
+### Q5: 如何修改目标城市？
 
 **A:** 在 `config.py` 中修改 `CITY` 变量：
 ```python
@@ -316,14 +383,14 @@ CITY = "shanghai"  # 上海
 CITY = "guangzhou"  # 广州
 ```
 
-### Q4: 虚拟环境激活失败？
+### Q6: 虚拟环境激活失败？
 
 **A:** Windows PowerShell 执行策略问题：
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-### Q5: 依赖安装失败？
+### Q7: 依赖安装失败？
 
 **A:** 尝试以下方法：
 - 使用国内镜像源：`pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`
