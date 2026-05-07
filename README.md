@@ -468,7 +468,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## 🔗 相关链接
 
-- [项目部署指南](DEPLOYMENT.md)
 - [Python 官方文档](https://docs.python.org/zh-cn/3/)
 - [BeautifulSoup 文档](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
 - [pandas 文档](https://pandas.pydata.org/docs/)
@@ -478,6 +477,10 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 **卑微计算机专业大学生**
 
 - GitHub: [@YEYUbaka](https://github.com/YEYUbaka)
+
+### 🤖 AI 协助
+
+- **Claude Code** (Anthropic) — 代码审查与优化建议
 
 ---
 
