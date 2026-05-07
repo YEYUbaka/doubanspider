@@ -48,6 +48,12 @@ images/*.jpeg
 # 日志文件
 *.log
 
+# 调试文件（运行时生成）
+debug_page.html
+
+# Claude Code 配置（本地）
+.claude/
+
 # 系统文件
 .DS_Store
 Thumbs.db
